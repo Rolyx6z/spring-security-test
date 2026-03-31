@@ -11,6 +11,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import train.springsecuritytest.security.RestAccessDeniedHandler;
@@ -71,13 +73,17 @@ public class SecurityConfig{
                 // 認可 (Authorization)
                 // 対象のURLがどのユーザーに許可されるかを指定
                 .authorizeHttpRequests(auth ->auth
-                        .requestMatchers("/","/public/**").permitAll()  // すべての人
+                        .requestMatchers("/","/public/**", "/makehash", "/css/**", "/register", "/register/**").permitAll()  // すべての人
                         .requestMatchers("/user/**").authenticated()    // 認証(ログイン)をしている人のみ
                         .requestMatchers("/admin/**").hasRole("ADMIN")  // ADMINをもつユーザーのみ
                         .anyRequest().authenticated()
                 )
                 // 認証 (Authentication)
                 .formLogin(form -> form
+                        //ログインページの指定(デフォルトのページではなく自分で作成する)
+                        .loginPage("/login")
+                        //ログイン成功後の遷移先
+                        .defaultSuccessUrl("/index.html")
                         .permitAll()            // すべての人
                 )
                 // ログアウト
@@ -90,23 +96,29 @@ public class SecurityConfig{
         return http.build();
     }
 
-    @Bean   // ユーザー情報の定義
-            // UserDetailsServiceクラスをConfigで定義しておくことで自動でユーザー認証を行える
-    public UserDetailsService userDetailsService() {
-
-        // UserDetailsはユーザー情報を入れておく箱のこと
-        final UserDetails alice = User.withUsername("alice")
-                // noopはハッシュ化をしないという意味
-                .password("{noop}password123")
-                .roles("ADMIN")
-                .build();
-
-        final UserDetails bob = User.withUsername("bob")
-                .password("{noop}password123")
-                .roles("USER")
-                .build();
-
-        // メモリ上に認証するユーザー情報を登録しておく
-        return new InMemoryUserDetailsManager(alice,bob);
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
     }
+
+//    @Bean
+//    // ユーザー情報の定義
+//    // UserDetailsServiceクラスをConfigで定義しておくことで自動でユーザー認証を行える
+//    public UserDetailsService userDetailsService() {
+//
+//        // UserDetailsはユーザー情報を入れておく箱のこと
+//        final UserDetails alice = User.withUsername("alice")
+//                // noopはハッシュ化をしないという意味
+//                .password("{noop}password123")
+//                .roles("ADMIN")
+//                .build();
+//
+//        final UserDetails bob = User.withUsername("bob")
+//                .password("{noop}password123")
+//                .roles("USER")
+//                .build();
+//
+//        // メモリ上に認証するユーザー情報を登録しておく
+//        return new InMemoryUserDetailsManager(alice,bob);
+//    }
 }
